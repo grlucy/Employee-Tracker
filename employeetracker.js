@@ -3,6 +3,7 @@
 const myPassword = "";
 
 // -------------------------------------------------------------------
+// -------------------------------------------------------------------
 // Dependencies
 
 const inquirer = require("inquirer");
@@ -10,6 +11,7 @@ const mysql = require("mysql");
 const consoleTable = require("console.table");
 const colors = require("colors");
 
+// -------------------------------------------------------------------
 // -------------------------------------------------------------------
 // Connection
 
@@ -31,6 +33,7 @@ connection.connect(err => {
   startApp();
 });
 
+// -------------------------------------------------------------------
 // -------------------------------------------------------------------
 // Functions
 
@@ -64,6 +67,9 @@ function startApp() {
     });
 }
 
+// -------------------------------------------------------------------
+// -------------------------------------------------------------------
+
 function viewData() {
   // Generate re-usable query
   function queryView(where) {
@@ -93,8 +99,11 @@ function viewData() {
         "Total utilized budget of a specific department"
       ]
     })
-    .then(answer => {
-      switch (answer.viewItem) {
+
+    .then(answer1 => {
+      switch (answer1.viewItem) {
+        // -------------------------------------------------------------------
+
         case "All departments":
           // Read all data in the department table and print to console
           connection.query(`SELECT * FROM department`, function(err, res) {
@@ -103,6 +112,9 @@ function viewData() {
             startApp();
           });
           break;
+
+        // -------------------------------------------------------------------
+
         case "All roles":
           // Read all data in the role table and print to console
           connection.query(`SELECT * FROM role`, function(err, res) {
@@ -111,6 +123,9 @@ function viewData() {
             startApp();
           });
           break;
+
+        // -------------------------------------------------------------------
+
         case "All employees":
           // Read all data in the employee table and print to console
           connection.query(`SELECT * FROM employee`, function(err, res) {
@@ -119,6 +134,9 @@ function viewData() {
             startApp();
           });
           break;
+
+        // -------------------------------------------------------------------
+
         case "Employees by manager":
           // Retrieve manager names and IDs from employee table
           connection.query(`SELECT * FROM employee`, function(err, res) {
@@ -154,9 +172,9 @@ function viewData() {
                   }
                 }
               ])
-              .then(answer => {
+              .then(answer2 => {
                 // Create a query using the manager name selected by user
-                const answerArr = answer.mgrChoice.split(" ");
+                const answerArr = answer2.mgrChoice.split(" ");
                 const mgrFirst = answerArr[0];
                 const mgrLast = answerArr[1];
                 const query = queryView(
@@ -171,6 +189,9 @@ function viewData() {
               });
           });
           break;
+
+        // -------------------------------------------------------------------
+
         case "Employees by department":
           // Read all data in the department table and pass department names to inquirer options
           connection.query(`SELECT * FROM department`, function(err, res) {
@@ -190,10 +211,10 @@ function viewData() {
                   }
                 }
               ])
-              .then(answer => {
+              .then(answer3 => {
                 // Create a query using the department name specified by user
                 const query = queryView(
-                  `department.name = "${answer.deptChoice}"`
+                  `department.name = "${answer3.deptChoice}"`
                 );
                 // Read data specified by above query and print to console
                 connection.query(query, function(err2, res2) {
@@ -204,6 +225,9 @@ function viewData() {
               });
           });
           break;
+
+        // -------------------------------------------------------------------
+
         case "Total utilized budget of a specific department":
           // Read all data in the department table and pass department names to inquirer options
           connection.query(`SELECT * FROM department`, function(err, res) {
@@ -223,14 +247,14 @@ function viewData() {
                   }
                 }
               ])
-              .then(answer => {
+              .then(answer4 => {
                 // Create a query using the department name specified by user
                 const query = `
                 SELECT department.name department_name, SUM(role.salary) utilized_budget
                 FROM employee
                 INNER JOIN role ON employee.role_id = role.id
                 INNER JOIN department ON role.department_id = department.id
-                WHERE department.name = "${answer.deptChoice}";
+                WHERE department.name = "${answer4.deptChoice}";
                 `;
                 // Read data specified by above query and print to console
                 connection.query(query, function(err2, res2) {
@@ -241,12 +265,18 @@ function viewData() {
               });
           });
           break;
+
+        // -------------------------------------------------------------------
+
         default:
           console.log("Error, please try again");
           startApp();
       }
     });
 }
+
+// -------------------------------------------------------------------
+// -------------------------------------------------------------------
 
 function addData() {
   // Get further info about user's desired action
@@ -257,8 +287,11 @@ function addData() {
       message: "What would you like to add?",
       choices: ["Department", "Role", "Employee"]
     })
-    .then(answer => {
-      switch (answer.addItem) {
+
+    .then(answer5 => {
+      switch (answer5.addItem) {
+        // -------------------------------------------------------------------
+
         case "Department":
           // Get department data from user
           inquirer
@@ -272,20 +305,23 @@ function addData() {
                 }
               }
             ])
-            .then(answer => {
+            .then(answer6 => {
               // Create a query using user-entered department data
               const query = `
               INSERT INTO department (name)
-              VALUES ("${answer.deptName}");
+              VALUES ("${answer6.deptName}");
               `;
               // Run query and log error or success
               connection.query(query, function(err, res) {
                 if (err) throw err;
-                console.log(`"${answer.deptName}" was added to departments.`);
+                console.log(`"${answer6.deptName}" was added to departments.`);
                 startApp();
               });
             });
           break;
+
+        // -------------------------------------------------------------------
+
         case "Role":
           // Read all data in the department table and pass department IDs & names to inquirer options
           connection.query(`SELECT * FROM department`, function(err, res) {
@@ -322,23 +358,26 @@ function addData() {
                   }
                 }
               ])
-              .then(answer => {
+              .then(answer7 => {
                 // Create a query using user-entered role data
-                const answerDeptArr = answer.departmentID.split(" ");
+                const answerDeptArr = answer7.departmentID.split(" ");
                 const deptID = Number(answerDeptArr[0]);
                 const query = `
                 INSERT INTO role (title, salary, department_id)
-                VALUES ("${answer.title}", ${answer.salary}, ${deptID});
+                VALUES ("${answer7.title}", ${answer7.salary}, ${deptID});
                 `;
                 // Run query and log error or success
                 connection.query(query, function(err, res) {
                   if (err) throw err;
-                  console.log(`"${answer.title}" was added to roles.`);
+                  console.log(`"${answer7.title}" was added to roles.`);
                   startApp();
                 });
               });
           });
           break;
+
+        // -------------------------------------------------------------------
+
         case "Employee":
           // Read all data in the role table and pass role IDs & names to inquirer options
           connection.query(`SELECT * FROM role`, function(err, roleData) {
@@ -397,21 +436,21 @@ function addData() {
                     }
                   }
                 ])
-                .then(answer => {
+                .then(answer8 => {
                   // Create a query using user-entered role data
-                  const answerRoleArr = answer.roleID.split(" ");
+                  const answerRoleArr = answer8.roleID.split(" ");
                   const roleID = Number(answerRoleArr[0]);
-                  const answerMgrArr = answer.managerID.split(" ");
+                  const answerMgrArr = answer8.managerID.split(" ");
                   const mgrID = Number(answerMgrArr[0]);
                   const query = `
                   INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                  VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${mgrID});
+                  VALUES ("${answer8.firstName}", "${answer8.lastName}", ${roleID}, ${mgrID});
                   `;
                   // Run query and log error or success
                   connection.query(query, function(err3, res3) {
                     if (err3) throw err3;
                     console.log(
-                      `"${answer.firstName} ${answer.lastName}" was added to employees.`
+                      `"${answer8.firstName} ${answer8.lastName}" was added to employees.`
                     );
                     startApp();
                   });
@@ -419,6 +458,9 @@ function addData() {
             });
           });
           break;
+
+        // -------------------------------------------------------------------
+
         default:
           console.log("Error, please try again");
           startApp();
@@ -426,9 +468,103 @@ function addData() {
     });
 }
 
-function updateData() {}
+// -------------------------------------------------------------------
+// -------------------------------------------------------------------
+
+function updateData() {
+  // Read all data in the employee table and pass to inquirer options
+  connection.query(`SELECT * FROM employee`, function(err, res) {
+    if (err) throw err;
+    // Get further info about user's desired action
+    inquirer
+      .prompt([
+        {
+          name: "updateItem",
+          type: "list",
+          message: "What would you like to update?",
+          choices: ["Employee's role", "Employee's manager"]
+        },
+        {
+          name: "employee",
+          type: "list",
+          message: "Which employee would you like to update?",
+          choices: function() {
+            let choiceArray = [];
+            for (let i = 0; i < res.length; i++) {
+              choiceArray.push(
+                `${res[i].id} (${res[i].first_name} ${res[i].last_name})`
+              );
+            }
+            return choiceArray;
+          }
+        }
+      ])
+
+      .then(answer9 => {
+        // Interpret user-entered data
+        const answerEmpArr = answer9.employee.split(" ");
+        const chosenEmployeeID = Number(answerEmpArr[0]);
+
+        switch (answer9.updateItem) {
+          // -------------------------------------------------------------------
+
+          case "Employee's role":
+            // Read all data in the role table and pass to inquirer options
+            connection.query(`SELECT * FROM role`, function(err2, res2) {
+              if (err2) throw err2;
+              // Ask user for employee's updated role
+              inquirer
+                .prompt([
+                  {
+                    name: "newRole",
+                    type: "list",
+                    message: "What is the employee's updated role?",
+                    choices: function() {
+                      let choiceArray = [];
+                      for (let i = 0; i < res2.length; i++) {
+                        choiceArray.push(`${res2[i].id} (${res2[i].title})`);
+                      }
+                      return choiceArray;
+                    }
+                  }
+                ])
+                .then(answer10 => {
+                  const answerRoleArr = answer10.newRole.split(" ");
+                  const newRole = Number(answerRoleArr[0]);
+                  connection.query(
+                    `UPDATE employee SET role_id = ${newRole} WHERE id = ${chosenEmployeeID}`,
+                    function(err3, res3) {
+                      if (err3) throw err3;
+                      console.log(`The employee's role was updated.`);
+                      startApp();
+                    }
+                  );
+                });
+            });
+            break;
+
+          // -------------------------------------------------------------------
+
+          case "Employee's manager":
+            break;
+
+          // -------------------------------------------------------------------
+
+          default:
+            console.log("Error, please try again");
+            startApp();
+        }
+      });
+  });
+}
+
+// -------------------------------------------------------------------
+// -------------------------------------------------------------------
 
 function deleteData() {}
+
+// -------------------------------------------------------------------
+// -------------------------------------------------------------------
 
 function exitApp() {
   // Print goodbye message and end connection
