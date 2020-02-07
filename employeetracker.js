@@ -524,6 +524,7 @@ function updateData() {
                   }
                 ])
                 .then(answer10 => {
+                  // Make query and log error or success
                   const answerRoleArr = answer10.newRole.split(" ");
                   const newRole = Number(answerRoleArr[0]);
                   connection.query(
@@ -563,6 +564,7 @@ function updateData() {
                   }
                 ])
                 .then(answer10 => {
+                  // Make query and log error or success
                   const answerManagerArr = answer10.newManager.split(" ");
                   const newManager = Number(answerManagerArr[0]);
                   connection.query(
@@ -590,7 +592,113 @@ function updateData() {
 // -------------------------------------------------------------------
 // -------------------------------------------------------------------
 
-function deleteData() {}
+function deleteData() {
+  // Get further info about user's desired action
+  inquirer
+    .prompt([
+      {
+        name: "deleteItem",
+        type: "list",
+        message: "What would you like to delete?",
+        choices: ["Department", "Role", "Employee"]
+      }
+    ])
+
+    .then(answer11 => {
+      switch (answer11.deleteItem) {
+        // -------------------------------------------------------------------
+
+        case "Department":
+          // Read all data from department table and pass to inquirer
+          connection.query(`SELECT * FROM department`, function(err, res) {
+            if (err) throw err;
+            // Ask user which department to delete
+            inquirer
+              .prompt([
+                {
+                  name: "department",
+                  type: "list",
+                  message:
+                    "Which department?\n" +
+                    "CAUTION! DELETING A DEPARTMENT WILL ALSO DELETE ASSOCIATED ROLES AND EMPLOYEES!"
+                      .red.bold,
+                  // TO DO: Add an option to cancel the delete
+                  choices: function() {
+                    let choiceArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                      choiceArray.push(`${res[i].id} (${res[i].name})`);
+                    }
+                    return choiceArray;
+                  }
+                }
+              ])
+              .then(answer12 => {
+                // Make query and log error or success
+                const answerDeptArr = answer12.department.split(" ");
+                const deleteDept = Number(answerDeptArr[0]);
+                const query = `DELETE FROM department WHERE id = ${deleteDept}`;
+                connection.query(query, function(err2, res2) {
+                  if (err2) throw err2;
+                  console.log("Deleted department.");
+                  startApp();
+                });
+              });
+          });
+          break;
+
+        // -------------------------------------------------------------------
+
+        case "Role":
+          // Read all data from role table and pass to inquirer
+          connection.query(`SELECT * FROM role`, function(err, res) {
+            if (err) throw err;
+            // Ask user which department to delete
+            inquirer
+              .prompt([
+                {
+                  name: "role",
+                  type: "list",
+                  message:
+                    "Which role?\n" +
+                    "CAUTION! DELETING A ROLE WILL ALSO DELETE ASSOCIATED EMPLOYEES!"
+                      .red.bold,
+                  // TO DO: Add an option to cancel the delete
+                  choices: function() {
+                    let choiceArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                      choiceArray.push(`${res[i].id} (${res[i].title})`);
+                    }
+                    return choiceArray;
+                  }
+                }
+              ])
+              .then(answer13 => {
+                // Make query and log error or success
+                const answerRoleArr = answer13.role.split(" ");
+                const deleteRole = Number(answerRoleArr[0]);
+                const query = `DELETE FROM role WHERE id = ${deleteRole}`;
+                connection.query(query, function(err2, res2) {
+                  if (err2) throw err2;
+                  console.log("Deleted role.");
+                  startApp();
+                });
+              });
+          });
+          break;
+
+        // -------------------------------------------------------------------
+
+        case "Employee":
+          break;
+
+        // -------------------------------------------------------------------
+
+        default:
+          console.log("Error, please try again");
+          startApp();
+      }
+    });
+}
 
 // -------------------------------------------------------------------
 // -------------------------------------------------------------------
