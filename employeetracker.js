@@ -71,19 +71,6 @@ function startApp() {
 // -------------------------------------------------------------------
 
 function viewData() {
-  // Generate re-usable query
-  function queryView(where) {
-    return `
-  SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, manager.first_name manager_first_name, manager.last_name manager_last_name, department.name department_name
-  FROM employee
-  INNER JOIN role ON employee.role_id = role.id
-  INNER JOIN department ON role.department_id = department.id
-  INNER JOIN employee manager
-  ON employee.manager_id = manager.id
-  WHERE ${where};
-  `;
-  }
-
   // Get further info about user's desired action
   inquirer
     .prompt({
@@ -177,9 +164,14 @@ function viewData() {
                 const answerArr = answer2.mgrChoice.split(" ");
                 const mgrFirst = answerArr[0];
                 const mgrLast = answerArr[1];
-                const query = queryView(
-                  `(manager.first_name = "${mgrFirst}" AND manager.last_name = "${mgrLast}");`
-                );
+                const query = `
+                SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, manager.first_name manager_first_name, manager.last_name manager_last_name, department.name department_name
+                FROM employee
+                INNER JOIN role ON employee.role_id = role.id
+                INNER JOIN department ON role.department_id = department.id
+                INNER JOIN employee manager ON employee.manager_id = manager.id
+                WHERE (manager.first_name = "${mgrFirst}" AND manager.last_name = "${mgrLast}");
+                `;
                 // Read data specified by above query and print to console
                 connection.query(query, function(err2, res2) {
                   if (err2) throw err2;
@@ -213,9 +205,12 @@ function viewData() {
               ])
               .then(answer3 => {
                 // Create a query using the department name specified by user
-                const query = queryView(
-                  `department.name = "${answer3.deptChoice}"`
-                );
+                const query = `
+                SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name department_name, employee.manager_id
+                FROM employee
+                INNER JOIN role ON employee.role_id = role.id
+                INNER JOIN department ON role.department_id = department.id
+                WHERE department.name = "${answer3.deptChoice}";`;
                 // Read data specified by above query and print to console
                 connection.query(query, function(err2, res2) {
                   if (err2) throw err2;
@@ -546,6 +541,40 @@ function updateData() {
           // -------------------------------------------------------------------
 
           case "Employee's manager":
+            // Read all data in the employee table and pass to inquirer options
+            connection.query(`SELECT * FROM employee`, function(err2, res2) {
+              if (err2) throw err2;
+              // Ask user for employee's updated manager
+              inquirer
+                .prompt([
+                  {
+                    name: "newManager",
+                    type: "list",
+                    message: "Who is the employee's updated manager?",
+                    choices: function() {
+                      let choiceArray = [];
+                      for (let i = 0; i < res2.length; i++) {
+                        choiceArray.push(
+                          `${res2[i].id} (${res2[i].first_name} ${res2[i].last_name})`
+                        );
+                      }
+                      return choiceArray;
+                    }
+                  }
+                ])
+                .then(answer10 => {
+                  const answerManagerArr = answer10.newManager.split(" ");
+                  const newManager = Number(answerManagerArr[0]);
+                  connection.query(
+                    `UPDATE employee SET manager_id = ${newManager} WHERE id = ${chosenEmployeeID}`,
+                    function(err3, res3) {
+                      if (err3) throw err3;
+                      console.log(`The employee's manager was updated.`);
+                      startApp();
+                    }
+                  );
+                });
+            });
             break;
 
           // -------------------------------------------------------------------
