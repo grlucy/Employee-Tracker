@@ -248,7 +248,183 @@ function viewData() {
     });
 }
 
-function addData() {}
+function addData() {
+  // Get further info about user's desired action
+  inquirer
+    .prompt({
+      type: "list",
+      name: "addItem",
+      message: "What would you like to add?",
+      choices: ["Department", "Role", "Employee"]
+    })
+    .then(answer => {
+      switch (answer.addItem) {
+        case "Department":
+          // Get department data from user
+          inquirer
+            .prompt([
+              {
+                name: "deptName",
+                type: "input",
+                message: "Department name:",
+                validate: function(val) {
+                  return /^[a-zA-Z]+( [a-zA-Z]+)*$/gi.test(val);
+                }
+              }
+            ])
+            .then(answer => {
+              // Create a query using user-entered department data
+              const query = `
+              INSERT INTO department (name)
+              VALUES ("${answer.deptName}");
+              `;
+              // Run query and log error or success
+              connection.query(query, function(err, res) {
+                if (err) throw err;
+                console.log(`"${answer.deptName}" was added to departments.`);
+                startApp();
+              });
+            });
+          break;
+        case "Role":
+          // Read all data in the department table and pass department IDs & names to inquirer options
+          connection.query(`SELECT * FROM department`, function(err, res) {
+            if (err) throw err;
+            // Get role data from user
+            inquirer
+              .prompt([
+                {
+                  name: "title",
+                  type: "input",
+                  message: "Role title:",
+                  validate: function(val) {
+                    return /^[a-zA-Z]+( [a-zA-Z]+)*$/gi.test(val);
+                  }
+                },
+                {
+                  name: "salary",
+                  type: "number",
+                  message: "Role salary:",
+                  validate: function(val) {
+                    return /^[0-9]+$/gi.test(val);
+                  }
+                },
+                {
+                  name: "departmentID",
+                  type: "list",
+                  message: "Role department ID:",
+                  choices: function() {
+                    let choiceArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                      choiceArray.push(`${res[i].id} (${res[i].name})`);
+                    }
+                    return choiceArray;
+                  }
+                }
+              ])
+              .then(answer => {
+                // Create a query using user-entered role data
+                const answerDeptArr = answer.departmentID.split(" ");
+                const deptID = Number(answerDeptArr[0]);
+                const query = `
+                INSERT INTO role (title, salary, department_id)
+                VALUES ("${answer.title}", ${answer.salary}, ${deptID});
+                `;
+                // Run query and log error or success
+                connection.query(query, function(err, res) {
+                  if (err) throw err;
+                  console.log(`"${answer.title}" was added to roles.`);
+                  startApp();
+                });
+              });
+          });
+          break;
+        case "Employee":
+          // Read all data in the role table and pass role IDs & names to inquirer options
+          connection.query(`SELECT * FROM role`, function(err, roleData) {
+            if (err) throw err;
+            // Read all data in the employee table and pass manager IDs & names to inquirer options
+            connection.query(`SELECT * FROM employee`, function(
+              err2,
+              managerData
+            ) {
+              if (err2) throw err2;
+              // Get employee data from user
+              inquirer
+                .prompt([
+                  {
+                    name: "firstName",
+                    type: "input",
+                    message: "Employee's first name:",
+                    validate: function(val) {
+                      return /^[a-zA-Z]+$/gi.test(val);
+                    }
+                  },
+                  {
+                    name: "lastName",
+                    type: "input",
+                    message: "Employee's last name:",
+                    validate: function(val) {
+                      return /^[a-zA-Z]+$/gi.test(val);
+                    }
+                  },
+                  {
+                    name: "roleID",
+                    type: "list",
+                    message: "Employee's role ID:",
+                    choices: function() {
+                      let choiceArray = [];
+                      for (let i = 0; i < roleData.length; i++) {
+                        choiceArray.push(
+                          `${roleData[i].id} (${roleData[i].title})`
+                        );
+                      }
+                      return choiceArray;
+                    }
+                  },
+                  {
+                    name: "managerID",
+                    type: "list",
+                    message: "Employee's manager's ID:",
+                    choices: function() {
+                      let choiceArray = [];
+                      for (let i = 0; i < managerData.length; i++) {
+                        choiceArray.push(
+                          `${managerData[i].id} (${managerData[i].first_name} ${managerData[i].last_name})`
+                        );
+                      }
+                      return choiceArray;
+                    }
+                  }
+                ])
+                .then(answer => {
+                  // Create a query using user-entered role data
+                  const answerRoleArr = answer.roleID.split(" ");
+                  const roleID = Number(answerRoleArr[0]);
+                  const answerMgrArr = answer.managerID.split(" ");
+                  const mgrID = Number(answerMgrArr[0]);
+                  const query = `
+                  INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                  VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${mgrID});
+                  `;
+                  // Run query and log error or success
+                  connection.query(query, function(err3, res3) {
+                    if (err3) throw err3;
+                    console.log(
+                      `"${answer.firstName} ${answer.lastName}" was added to employees.`
+                    );
+                    startApp();
+                  });
+                });
+            });
+          });
+          break;
+        default:
+          console.log("Error, please try again");
+          startApp();
+      }
+    });
+}
 
 function updateData() {}
 
