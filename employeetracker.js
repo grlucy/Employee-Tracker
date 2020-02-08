@@ -652,7 +652,7 @@ function deleteData() {
           // Read all data from role table and pass to inquirer
           connection.query(`SELECT * FROM role`, function(err, res) {
             if (err) throw err;
-            // Ask user which department to delete
+            // Ask user which role to delete
             inquirer
               .prompt([
                 {
@@ -689,6 +689,43 @@ function deleteData() {
         // -------------------------------------------------------------------
 
         case "Employee":
+          // Read all data from employee table and pass to inquirer
+          connection.query(`SELECT * FROM employee`, function(err, res) {
+            if (err) throw err;
+            // Ask user which employee to delete
+            inquirer
+              .prompt([
+                {
+                  name: "employee",
+                  type: "list",
+                  message:
+                    "Which employee?\n" +
+                    "CAUTION! DELETING A MANAGER WILL ALSO DELETE ASSOCIATED EMPLOYEES!"
+                      .red.bold,
+                  // TO DO: Add an option to cancel the delete
+                  choices: function() {
+                    let choiceArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                      choiceArray.push(
+                        `${res[i].id} (${res[i].first_name} ${res[i].last_name})`
+                      );
+                    }
+                    return choiceArray;
+                  }
+                }
+              ])
+              .then(answer14 => {
+                // Make query and log error or success
+                const answerEmpArr = answer14.employee.split(" ");
+                const deleteEmp = Number(answerEmpArr[0]);
+                const query = `DELETE FROM employee WHERE id = ${deleteEmp}`;
+                connection.query(query, function(err2, res2) {
+                  if (err2) throw err2;
+                  console.log("Deleted employee.");
+                  startApp();
+                });
+              });
+          });
           break;
 
         // -------------------------------------------------------------------
